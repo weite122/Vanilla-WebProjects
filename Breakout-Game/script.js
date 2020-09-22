@@ -4,14 +4,10 @@ const rules = document.getElementById('rules')
 const canvas = document.getElementById('canvas')
 const ctx = canvas.getContext('2d')
 
-rulesBtn.addEventListener('click', () => {
-  rules.classList.add('show')
-})
-closeBtn.addEventListener('click', () => {
-  rules.classList.remove('show')
-})
 
 let score = 0
+const brickColumnCount = 5
+const brickRowCount = 9
 
 const ball = {
   x: canvas.width / 2,
@@ -39,6 +35,38 @@ const paddle = {
   dx: 0
 }
 
+const brickInfo = {
+  w: 70,
+  h: 20,
+  padding: 10,
+  offsetX: 45,
+  offsetY: 60,
+  visible: true
+}
+
+const bricks = []
+for (let i = 0; i < brickRowCount; i++) {
+  bricks[i] = []
+  for (let j = 0; j < brickColumnCount; j++) {
+    const x = i * (brickInfo.w + brickInfo.padding) + brickInfo.offsetX
+    const y = j * (brickInfo.h + brickInfo.padding) + brickInfo.offsetY
+    bricks[i][j] = {x, y, ...brickInfo}
+  }
+}
+
+function drawBricks() {
+  bricks.forEach(column => {
+    column.forEach(brick => {
+      ctx.beginPath()
+      ctx.rect(brick.x, brick.y, brick.w, brick.h)
+      ctx.fillStyle = brick.visible ? '#0095dd' : 'transparent'
+      ctx.fill()
+      ctx.closePath()
+    })
+  })
+}
+
+
 function drawPaddle() {
   roundedRect(ctx, paddle.x, paddle.y, paddle.w, paddle.h, paddle.h / 2)
   ctx.fillStyle = '#0095dd'
@@ -60,16 +88,65 @@ function roundedRect(ctx, x, y, width, height, radius) {
   // ctx.stroke();
 }
 
-function draw() {
-  drawBall()
-  drawPaddle()
-  drawScore()
-}
-
 function drawScore() {
   ctx.font = '20px Arial'
   ctx.fillText(`Score: ${score}`, canvas.width - 100, 30)
 }
 
+function movePaddle() {
+  paddle.x += paddle.dx
+  if (paddle.x + paddle.w > canvas.width) {
+    paddle.x = canvas.width - paddle.w
+  }
+
+  if (paddle.x < 0) {
+    paddle.x = 0
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);//消除锯齿
+  drawBall()
+  drawPaddle()
+  drawScore()
+  drawBricks()
+}
+
+function update() {
+  movePaddle()
+
+  draw()
+
+  requestAnimationFrame(update)
+}
+
+update()
+
 
 draw()
+
+function keyDown(e) {
+  if (e.key === 'Right' || e.key === 'ArrowRight') {
+    paddle.dx = paddle.speed
+  } else if (e.key === 'Left' || e.key === 'ArrowLeft') {
+    paddle.dx = -paddle.speed
+  }
+}
+
+
+function keyUp(e) {
+  if (e.key === 'Right' || e.key === 'ArrowRight' || e.key === 'Left' || e.key === 'ArrowLeft') {
+    paddle.dx = 0
+  }
+}
+
+rulesBtn.addEventListener('click', () => {
+  rules.classList.add('show')
+})
+closeBtn.addEventListener('click', () => {
+  rules.classList.remove('show')
+})
+
+document.addEventListener('keydown', keyDown)
+
+document.addEventListener('keyup', keyUp)
